@@ -1,0 +1,5 @@
+myvar = 10
+myvar = 30
+print myvar
+myvar = 20
+print myvar
