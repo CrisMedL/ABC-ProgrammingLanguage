@@ -1,21 +1,31 @@
 %{
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "parser.tab.h"
+#include <string.h>
+#include <stdlib.h>   // For strdup, atoi
 %}
-%option noyywrap
+
+
+%x STRINGMODE
+
 %%
-declare { return DECLARE; }
-print  { return PRINT; }
-=      { return EQ; }
-[0-9]+ { yylval.value = atoi(yytext); 
-         return NUMBER; 
-       }
-[a-zA-Z][a-zA-Z0-9]* { 
-       yylval.vname = strdup(yytext); 
-       return VARNAME; 
-    }
-[ \t\n]   ; /* skip whitespace */
-.       { return yytext[0]; }
+
+"declare"         { return DECLARE; }
+"print"           { return PRINT; }
+"="               { return EQ; }
+"+"               { return PLUS; }
+"-"               { return MINUS; }
+"*"               { return TIMES; }
+"/"               { return DIVIDE; }
+[0-9]+            { yylval.num_value = atoi(yytext); return NUMBER; }
+\"([^\"\n]*)\"    { yylval.str_value = strdup(yytext + 1); yylval.str_value[strlen(yylval.str_value) - 1] = '\0'; return STRING; }
+[a-zA-Z_][a-zA-Z0-9_]* { yylval.str_value = strdup(yytext); return VARNAME; }
+
+[ \t\r\n]+        { /* skip whitespace */ }
+
+.                 { printf("Unexpected character: %s\n", yytext); }
+
 %%
+
+int yywrap(void) {
+    return 1;
+}
