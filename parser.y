@@ -19,6 +19,7 @@ void yyerror(const char* s) {
 
 %token DECLARE PRINT EQ
 %token PLUS MINUS TIMES DIVIDE
+%token COMMA
 %token <num_value> NUMBER
 %token <str_value> STRING
 %token <str_value> VARNAME
@@ -48,7 +49,19 @@ declaration:
       DECLARE VARNAME EQ expr       { declare_symbol_with_number($2, $4); }
     | DECLARE VARNAME EQ STRING     { declare_symbol_with_string($2, $4); }
     | DECLARE VARNAME               { declare_symbol_empty($2); }
+    | DECLARE var_list
     ;
+
+var_list:
+    var_init
+  | var_init COMMA var_list
+;
+
+var_init:
+    VARNAME EQ expr    { declare_symbol_with_number($1, $3); }
+  | VARNAME EQ STRING  { declare_symbol_with_string($1, $3); }
+  | VARNAME            { declare_symbol_empty($1); }
+;
 
 assignment:
       VARNAME EQ expr               { set_symbol_number($1, $3); }

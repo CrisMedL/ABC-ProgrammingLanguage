@@ -1,5 +1,1 @@
-myvar = 10
-myvar = 30
-print myvar
-myvar = 20
-print myvar
+ print 5 + 2 * x
