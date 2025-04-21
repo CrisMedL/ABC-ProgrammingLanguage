@@ -23,6 +23,7 @@ void yyerror(const char* s) {
 %token <num_value> NUMBER
 %token <str_value> STRING
 %token <str_value> VARNAME
+%token DUMP
 
 %type <num_value> expr
 
@@ -43,6 +44,7 @@ line:
       declaration
     | assignment
     | print
+    | DUMP { print_table(); }
     ;
 
 declaration:
