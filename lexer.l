@@ -6,6 +6,7 @@
 %}
 %option noyywrap
 %%
+declare { return DECLARE; }
 print  { return PRINT; }
 =      { return EQ; }
 [0-9]+ { yylval.value = atoi(yytext); 
@@ -15,4 +16,6 @@ print  { return PRINT; }
        yylval.vname = strdup(yytext); 
        return VARNAME; 
     }
+[ \t\n]   ; /* skip whitespace */
+.       { return yytext[0]; }
 %%
