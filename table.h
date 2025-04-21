@@ -1,59 +1,87 @@
+#ifndef TABLE_H
+#define TABLE_H
+
+#include <stdbool.h>
+
+#define MAX_SYMBOLS 100
+
+struct symbol {
+    char* name;
+    int value;
+    char* str_value;
+    bool is_string;
+};
+
+struct symbol* find_symbol(const char* name);
+void declare_symbol_with_number(const char* name, int value);
+void declare_symbol_with_string(const char* name, const char* value);
+void declare_symbol_empty(const char* name);
+void set_symbol_number(const char* name, int value);
+void set_symbol_string(const char* name, const char* value);
+
+#endif
+
+// --- Implementation ---
 #include <string.h>
 #include <stdlib.h>
- 
-struct symbol {
-  char* name;
-  int value;
-  int declared;  // Flag to track if variable is declared
-};
-struct symbol table[100]; 
-int num_sym = 0;
+#include <stdio.h>
 
-int find_symbol(char *sname) {
-   for(int i=0; i < num_sym; i++) {
-       if(strcmp(table[i].name, sname) == 0)
-         return i;
-   }
-   return -1;
+static struct symbol symbol_table[MAX_SYMBOLS];
+static int symbol_count = 0;
+
+struct symbol* find_symbol(const char* name) {
+    for (int i = 0; i < symbol_count; ++i) {
+        if (strcmp(symbol_table[i].name, name) == 0)
+            return &symbol_table[i];
+    }
+    return NULL;
 }
 
-void declare_symbol(char *sname) {
-    int pos = find_symbol(sname);
-    if(pos >= 0) {
-        printf("Multiple declaration of variable %s\n", sname);
-        exit(0);
+static struct symbol* create_symbol(const char* name) {
+    if (symbol_count >= MAX_SYMBOLS) {
+        fprintf(stderr, "Symbol table full\n");
+        exit(1);
     }
-    table[num_sym].name = sname;
-    table[num_sym].declared = 1;
-    table[num_sym].value = 0; // Default value
-    num_sym++;
-    if(num_sym > 100) {
-        printf("Too many variables (>100)\n");
-        exit(0);
-    }
+    symbol_table[symbol_count].name = strdup(name);
+    symbol_table[symbol_count].value = 0;
+    symbol_table[symbol_count].str_value = NULL;
+    symbol_table[symbol_count].is_string = false;
+    return &symbol_table[symbol_count++];
 }
 
-void declare_symbol_with_value(char *sname, int svalue) {
-    int pos = find_symbol(sname);
-    if(pos >= 0) {
-        printf("Multiple declaration of variable %s\n", sname);
-        exit(0);
-    }
-    table[num_sym].name = sname;
-    table[num_sym].declared = 1;
-    table[num_sym].value = svalue;
-    num_sym++;
-    if(num_sym > 100) {
-        printf("Too many variables (>100)\n");
-        exit(0);
-    }
+void declare_symbol_with_number(const char* name, int value) {
+    struct symbol* s = create_symbol(name);
+    s->value = value;
+    s->is_string = false;
 }
 
-void set_symbol(char *sname, int svalue) {
-    int pos = find_symbol(sname);
-    if(pos < 0) {
-        printf("Undeclared variable %s\n", sname);
-        exit(0);
+void declare_symbol_with_string(const char* name, const char* value) {
+    struct symbol* s = create_symbol(name);
+    s->str_value = strdup(value);
+    s->is_string = true;
+}
+
+void declare_symbol_empty(const char* name) {
+    create_symbol(name);
+}
+
+void set_symbol_number(const char* name, int value) {
+    struct symbol* s = find_symbol(name);
+    if (!s) {
+        fprintf(stderr, "Undeclared variable %s\n", name);
+        exit(1);
     }
-    table[pos].value = svalue;
+    s->value = value;
+    s->is_string = false;
+}
+
+void set_symbol_string(const char* name, const char* value) {
+    struct symbol* s = find_symbol(name);
+    if (!s) {
+        fprintf(stderr, "Undeclared variable %s\n", name);
+        exit(1);
+    }
+    if (s->str_value) free(s->str_value);
+    s->str_value = strdup(value);
+    s->is_string = true;
 }

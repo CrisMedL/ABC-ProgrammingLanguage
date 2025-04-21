@@ -1,46 +1,115 @@
 %{
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "table.h"
-extern FILE *yyin;
+
 extern int yylex(void);
-void yyerror(const char*);
-%}
-%union {
-  char* vname; 
-  int value; 
-};
-%token DECLARE PRINT EQ 
-%token <value> NUMBER
-%token <vname> VARNAME
-%%
-P: L YYEOF
-L: I L
-L: 
-I: DECLARE VARNAME { declare_symbol($2); }
-I: DECLARE VARNAME EQ NUMBER { declare_symbol_with_value($2, $4); }
-I: VARNAME EQ NUMBER { 
-      if (find_symbol($1) < 0) {
-        printf("Undeclared variable %s\n", $1);
-        exit(0);
-      }
-      set_symbol($1, $3); 
-    }
-I: PRINT VARNAME { 
-      int index = find_symbol($2); 
-      if(index >= 0)
-        printf("%d\n",table[index].value); 
-      else {
-        printf("Undeclared variable %s\n",$2);
-        exit(0);
-      }
-    }
-%%
- 
-int main(void) {
-  yyin = fopen("program.txt", "r");
-  yyparse(); 
+extern FILE* yyin;
+
+void yyerror(const char* s) {
+    fprintf(stderr, "Error: %s\n", s);
 }
- 
-void yyerror(const char *s) { 
-        printf("error: %s\n", s); 
+%}
+
+%union {
+    int num_value;
+    char* str_value;
+}
+
+%token DECLARE PRINT EQ
+%token PLUS MINUS TIMES DIVIDE
+%token <num_value> NUMBER
+%token <str_value> STRING
+%token <str_value> VARNAME
+
+%type <num_value> expr
+
+%left PLUS MINUS
+%left TIMES DIVIDE
+%nonassoc UMINUS
+
+%%
+
+program: lines ;
+
+lines:
+      line lines
+    | /* empty */
+    ;
+
+line:
+      declaration
+    | assignment
+    | print
+    ;
+
+declaration:
+      DECLARE VARNAME EQ expr       { declare_symbol_with_number($2, $4); }
+    | DECLARE VARNAME EQ STRING     { declare_symbol_with_string($2, $4); }
+    | DECLARE VARNAME               { declare_symbol_empty($2); }
+    ;
+
+assignment:
+      VARNAME EQ expr               { set_symbol_number($1, $3); }
+    | VARNAME EQ STRING             { set_symbol_string($1, $3); }
+    ;
+
+print:
+      PRINT VARNAME {
+          struct symbol* s = find_symbol($2);
+          if (!s) {
+              printf("Undeclared variable %s\n", $2);
+              exit(1);
+          }
+          if (s->is_string) {
+              printf("%s\n", s->str_value);
+          } else {
+              printf("%d\n", s->value);
+          }
+      }
+    ;
+
+expr:
+      expr PLUS expr     { $$ = $1 + $3; }
+    | expr MINUS expr    { $$ = $1 - $3; }
+    | expr TIMES expr    { $$ = $1 * $3; }
+    | expr DIVIDE expr   {
+          if ($3 == 0) {
+              yyerror("Division by zero");
+              exit(1);
+          }
+          $$ = $1 / $3;
+      }
+    | MINUS expr %prec UMINUS { $$ = -$2; }
+    | NUMBER            { $$ = $1; }
+    | VARNAME {
+          struct symbol* s = find_symbol($1);
+          if (!s) {
+              printf("Undeclared variable %s\n", $1);
+              exit(1);
+          }
+          if (s->is_string) {
+              printf("Variable %s is a string, not a number\n", $1);
+              exit(1);
+          }
+          $$ = s->value;
+      }
+    | '(' expr ')'      { $$ = $2; }
+    ;
+
+%%
+
+int main(int argc, char *argv[]) {
+    if (argc > 1) {
+        yyin = fopen(argv[1], "r");
+        if (!yyin) {
+            perror("Error opening file");
+            return 1;
+        }
+    } else {
+        yyin = stdin;
+    }
+
+    return yyparse();
 }
