@@ -11,6 +11,7 @@
 
 "declare"         { return DECLARE; }
 "print"           { return PRINT; }
+"dump"            { return DUMP; }
 "="               { return EQ; }
 "+"               { return PLUS; }
 "-"               { return MINUS; }
