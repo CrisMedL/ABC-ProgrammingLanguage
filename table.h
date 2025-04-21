@@ -94,17 +94,13 @@ void set_symbol_string(const char* name, const char* value) {
 }
 
 void print_table(void) {
-    printf("--- Symbol Table ---\n");
-    for (int i = 0; i < symbol_count; ++i) {
-        struct symbol s = symbol_table[i];
-        printf("Name: %s, Type: %s, Value: ",
-               s.name,
-               s.is_string ? "string" : "number");
-
-        if (s.is_string)
-            printf("%s\n", s.str_value ? s.str_value : "(null)");
-        else
-            printf("%d\n", s.value);
+    printf("---- Symbol Table ----\n");
+    for (int i = 0; i < symbol_count; i++) {
+        if (symbol_table[i].is_string && symbol_table[i].str_value) {
+            printf("%s = \"%s\"\n", symbol_table[i].name, symbol_table[i].str_value);
+        } else {
+            printf("%s = %d\n", symbol_table[i].name, symbol_table[i].value);
+        }
     }
-    printf("---------------------\n");
+    printf("-----------------------\n");
 }
